@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#102a43">
+  <meta name="description" content="Aplikasi PWA untuk mengelola stok dan pengecekan barang.">
+  <title>StokKu — Pengecekan Barang</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><div class="brand-mark">S</div><div><b>StokKu</b><small>Inventory control</small></div></div>
+      <nav>
+        <button class="nav-link active" data-view="dashboard"><span>▦</span> Dashboard</button>
+        <button class="nav-link" data-view="items"><span>▤</span> Data Barang</button>
+        <button class="nav-link" data-view="checks"><span>✓</span> Pengecekan</button>
+        <button class="nav-link" data-view="history"><span>◷</span> Riwayat Aktivitas</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="offline-indicator"><i></i><span id="connectionText">Siap digunakan</span></div>
+        <small>StokKu PWA · Versi 1.0</small>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-btn" id="menuBtn" aria-label="Buka menu">☰</button>
+        <div><div class="eyebrow">MANAJEMEN INVENTARIS</div><h1 id="pageTitle">Dashboard</h1></div>
+        <div class="top-actions"><span class="date-chip" id="todayLabel"></span><button class="btn btn-primary" id="quickAdd">＋ Tambah Barang</button></div>
+      </header>
+
+      <section class="view active" id="dashboardView">
+        <div class="welcome"><div><p class="welcome-kicker">RINGKASAN INVENTARIS</p><h2>Kontrol barang jadi lebih mudah.</h2><p>Pantau jumlah stok, kondisi barang, dan jadwal pengecekan dalam satu tempat.</p></div><div class="welcome-icon">▣</div></div>
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-top"><span>Total jenis barang</span><span class="stat-icon blue">▤</span></div><strong id="statItems">0</strong><small>Barang terdaftar</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Total unit stok</span><span class="stat-icon purple">▦</span></div><strong id="statUnits">0</strong><small>Akumulasi seluruh stok</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Stok menipis</span><span class="stat-icon orange">!</span></div><strong id="statLow">0</strong><small>Perlu segera diperhatikan</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Perlu pengecekan</span><span class="stat-icon green">✓</span></div><strong id="statCheck">0</strong><small>Belum dicek hari ini</small></article>
+        </div>
+        <div class="content-grid">
+          <section class="panel"><div class="panel-heading"><div><h3>Barang perlu perhatian</h3><p>Stok berada di bawah batas minimum.</p></div><button class="text-btn" data-goto="items">Lihat semua →</button></div><div id="lowStockList" class="compact-list"></div></section>
+          <section class="panel"><div class="panel-heading"><div><h3>Aktivitas terbaru</h3><p>Catatan perubahan terakhir.</p></div><button class="text-btn" data-goto="history">Lihat riwayat →</button></div><div id="recentActivity" class="compact-list"></div></section>
+        </div>
+        <section class="panel quick-panel"><div><h3>Mulai pengecekan barang</h3><p>Periksa kondisi fisik dan cocokkan stok aktual dengan data sistem.</p></div><button class="btn btn-primary" data-goto="checks">Buka pengecekan <span>→</span></button></section>
+      </section>
+
+      <section class="view" id="itemsView">
+        <div class="toolbar"><div class="search-wrap"><span>⌕</span><input id="itemSearch" placeholder="Cari nama, kode, atau kategori..."></div><select id="categoryFilter"><option value="">Semua kategori</option></select><select id="stockFilter"><option value="">Semua kondisi stok</option><option value="low">Stok menipis</option><option value="safe">Stok aman</option><option value="empty">Stok habis</option></select><button class="btn btn-outline" id="exportBtn">↓ Ekspor CSV</button><button class="btn btn-primary" id="addItemBtn">＋ Tambah Barang</button></div>
+        <section class="panel table-panel"><div class="table-heading"><div><h3>Daftar barang</h3><p id="itemCount">0 barang</p></div><span class="table-note">Data tersimpan di perangkat ini</span></div><div class="table-scroll"><table><thead><tr><th>KODE / NAMA BARANG</th><th>KATEGORI</th><th>STOK</th><th>MINIMUM</th><th>KONDISI</th><th>TERAKHIR DICEK</th><th>AKSI</th></tr></thead><tbody id="itemsTable"></tbody></table></div><div id="emptyItems" class="empty-state" hidden><div>▤</div><b>Belum ada barang</b><p>Tambahkan barang pertama untuk mulai mengelola inventaris.</p><button class="btn btn-primary" id="emptyAdd">＋ Tambah Barang</button></div></section>
+      </section>
+
+      <section class="view" id="checksView">
+        <div class="section-intro"><div><h2>Pengecekan barang</h2><p>Masukkan jumlah fisik hasil pemeriksaan. Selisih stok akan dicatat otomatis.</p></div><span class="pill pill-blue" id="checkDate"></span></div>
+        <section class="panel"><div class="panel-heading"><div><h3>Form pengecekan</h3><p>Pilih barang, cek kondisi, lalu simpan hasilnya.</p></div></div><form id="checkForm" class="check-form"><label>Barang yang diperiksa<select id="checkItem" required><option value="">Pilih barang...</option></select></label><div class="form-row"><label>Stok aktual / fisik<input id="actualStock" type="number" min="0" step="1" required placeholder="Contoh: 25"></label><label>Kondisi barang<select id="condition"><option>Baik</option><option>Rusak</option><option>Kedaluwarsa</option><option>Perlu perbaikan</option></select></label></div><label>Catatan pemeriksaan <span class="optional">(opsional)</span><textarea id="checkNotes" rows="3" placeholder="Tulis kondisi atau temuan saat pemeriksaan..."></textarea></label><div id="stockPreview" class="stock-preview">Pilih barang untuk melihat perbandingan stok.</div><button class="btn btn-primary" type="submit">✓ Simpan hasil pengecekan</button></form></section>
+        <section class="panel"><div class="panel-heading"><div><h3>Daftar pengecekan hari ini</h3><p>Barang yang sudah diperiksa pada tanggal ini.</p></div></div><div id="todayChecks" class="compact-list"></div></section>
+      </section>
+
+      <section class="view" id="historyView">
+        <div class="toolbar"><div class="search-wrap"><span>⌕</span><input id="historySearch" placeholder="Cari aktivitas atau nama barang..."></div><button class="btn btn-outline" id="clearHistory">Bersihkan riwayat</button></div>
+        <section class="panel"><div class="panel-heading"><div><h3>Riwayat aktivitas</h3><p>Rekaman penambahan, perubahan, dan pengecekan barang.</p></div></div><div id="historyList" class="history-list"></div></section>
+      </section>
+
+      <footer>© 2026 StokKu · Aplikasi pengecekan barang berbasis PWA</footer>
+    </main>
+  </div>
+
+  <dialog id="itemDialog">
+    <form id="itemForm" method="dialog">
+      <div class="dialog-head"><div><p class="eyebrow">DATA INVENTARIS</p><h2 id="dialogTitle">Tambah barang</h2></div><button type="button" class="close-btn" id="closeDialog">×</button></div>
+      <input type="hidden" id="editId">
+      <div class="form-grid">
+        <label>Nama barang<input id="itemName" required maxlength="80" placeholder="Contoh: Kertas A4"></label>
+        <label>Kode barang<input id="itemCode" maxlength="30" placeholder="Otomatis jika dikosongkan"></label>
+        <label>Kategori<input id="itemCategory" required maxlength="40" placeholder="Contoh: ATK"></label>
+        <label>Lokasi penyimpanan<input id="itemLocation" maxlength="60" placeholder="Contoh: Gudang A"></label>
+        <label>Jumlah stok<input id="itemStock" type="number" min="0" step="1" required value="0"></label>
+        <label>Stok minimum<input id="itemMin" type="number" min="0" step="1" required value="5"></label>
+        <label class="full">Catatan <textarea id="itemNotes" rows="2" placeholder="Informasi tambahan (opsional)"></textarea></label>
+      </div>
+      <div class="dialog-actions"><button type="button" class="btn btn-outline" id="cancelDialog">Batal</button><button class="btn btn-primary" type="submit">Simpan barang</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
